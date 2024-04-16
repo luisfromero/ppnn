@@ -6,13 +6,19 @@ This project aims to calculate the Total Viewshed within the socio-economic infl
 
  Total Viewshed are essential for understanding the visual impact of natural landscapes, particularly within the context of national parks. By identifying these sheds, stakeholders can make informed decisions regarding land use, conservation efforts, and tourism development.
 
-### Project Images
-
 ![Spanish National Parks Map](img/ppnn1.jpg)
 *Map showing the Spanish national parks, their influence area, a 60km buffer, and the bounding boxes of the buffers.*
 
-![Total Visual Basins in Andalucia](img/tvs1.jpg)
-* Total Viewshed of the bounding boxes in Andalucia, calculated with a resolution of 30m.*
+
+### Project Images
+
+
+![Total Viewshed in Andalucia](img/tvs1.jpg)
+* Total Viewshed of the bounding boxes in two National Parks in Andalucia ( (Sierra Nevada, on the right, and Sierra de las Nieves, on the left), calculated with a resolution of 30m.*
+
+![Partial Viewshed in Canary Islands](img/teide1.png)
+* This image shows the viewshed visible from any point in the Teide National Park (189km2), with a resolution of 30m, so it is the sum of around 200,000 single viewsheds. The calculation was carried out with an NVidia GPU in less than a minute.*
+
 
 ### QGIS Project
 
@@ -22,12 +28,12 @@ To explore the data and results further, you can access the QGIS project [here](
 
 The project utilizes several Python scripts for buffer and bounding box generation:
 
-- `main.py`
+- [main.py](scripts/main.py)
 - `ppnn2024a.py`
 - `ppnn2024b.py`
 - `ppnn2024c.py`
 
-These scripts are instrumental in preprocessing the data and preparing it for Total Viewshed calculations.
+These scripts, to be used, for example, in the QGIS python console, are instrumental in preprocessing the data and preparing it for Total Viewshed calculations.
 
 ## GDAL Tool Development
 
@@ -39,6 +45,10 @@ Additionally, for Windows users, a compiled version (`gdal_tviewshed.exe`) is av
 
 The  Total Viewshed calculations are performed using the skewEngine algorithm, available at [this GitHub repository](https://github.com/luisfromero/skewEngine). These calculations are optimized for performance, leveraging the power of a RTX4080 GPU with C++ and OpenCL.
 
+
+
 ---
+
+
 
 This project serves as a valuable resource for environmentalists, policymakers, and researchers interested in understanding and preserving the visual integrity of Spain's national parks. For any inquiries or collaborations, feel free to contact the project maintainers.
