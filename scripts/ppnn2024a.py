@@ -1,12 +1,7 @@
 
-
-# Forma usada por chatGpt para cargar las capas (nstancias)
-layers = project.mapLayers().values()
-project_dir = QgsProject.instance().readPath("./")
-
 for layer in layers:
     # Comprobar si la capa es un shapefile
-    if isinstance(layer, QgsVectorLayer) and layer.dataProvider().name() == "ogr"  and layer.name().startswith("Shape"):
+    if isinstance(layer, QgsVectorLayer) and layer.dataProvider().name() == "ogr"  and layer.name().startswith("Shapes Grid/Aigues"):
         # Crear el nombre del archivo de salida para el buffer
         output_file = os.path.join(project_dir, f"{os.path.basename(layer.name())}_buffer.shp")
         
