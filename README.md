@@ -9,6 +9,26 @@ This project aims to calculate the Total Viewshed within the socio-economic infl
 ![Spanish National Parks Map](img/ppnn1.jpg)
 *Map showing the Spanish national parks, their influence area, a 60km buffer, and the bounding boxes of the buffers.*
 
+## GDAL_TVS
+
+A crucial aspect in studying the total visual basin of Spain's national parks is the development of a suitable computer tool that is both versatile and efficient. Therefore, inspired by the fantastic gdal_viewshed tool by Tamas Szekeres [cite], we have created GDAL_TVS (TotalViewshed). Essentially, this tool utilizes the efficient skewEngine algorithm [cite] to compute the total visual basin of an elevation model.
+
+However, during the adaptation of the algorithm to GDAL, as well as during the analysis of the state-of-the-art in the visibility field, we discovered the possibility of adapting the tool to meet a growing demand in GIS, especially related to surveillance or observation paths, and solar radiation calculations.
+
+The result is GDAL_TVS: a tool that, from a raster elevation model, produces three types of output rasters:
+
+1. **TOTAL:** In this mode, the raster calculates the total visual basin of the terrain, measured in visible hectares from each point of the input raster, and stored as a geoTIFF raster layer of type float32.
+
+2. **MULTIPLE:** In this mode, the application computes the visual basin observed from a subset of points of the input raster, which can be a polygon or a path, for example. The result is a raster layer with a mask, similar to what gdal_viewshed produces. But unlike gdal_viewshed, the mask is not boolean but a float indicating if a destination point is visible from a greater or lesser number of observation points.
+
+3. **RADIATION:** The third mode is intended to generate a raster that can be useful in a tool for calculating solar radiation. In this case, GDAL_TVS produces 3 layers of information (362 bands of byte size) in which, for each point, it stores:
+
+   - 1 head value
+   - 1 tilt value
+   - 360 elevation of the horizon at each azimuth
+
+The developed tool can utilize available CPU cores (with OpenMP) but is incredibly fast on GPUs (using OpenCL). For example, calculations on raster dimensions of 5000x5000 are processed in just a few seconds.
+
 
 ### Project Images
 
@@ -18,6 +38,24 @@ This project aims to calculate the Total Viewshed within the socio-economic infl
 
 ![Partial Viewshed in Canary Islands](img/teide1.png)
 * This image shows the viewshed visible from any point in the Teide National Park (189km2), with a resolution of 30m, so it is the sum of around 200,000 single viewsheds. The calculation was carried out with an NVidia GPU in less than a minute.*
+
+### Multiple viewshed (viewshed for many points)
+
+# Preparación de los datos: dos bandas en un mismo rater
+
+```sh
+rem borramos el raster destino y los metadatos de qgis para evitar confusión al viasualizar max min
+del d:\datos\input\rutaMulhacen.tif.aux.xml
+del d:\datos\input\rutaMulhacen.tif
+rem copiamos el raster sobre el que vamos a trabajar (extension resolucion y crs) pero con valor 0
+c:\OSGeo4W\bin\gdal_create.exe -burn 0 -if d:\datos\input\bak\SierraNevada.tif d:\datos\input\rutaMulhacen.tif
+rem quemamos el shape con valor 1
+C:\OSGeo4W\bin\gdal_rasterize.exe -burn 1  -l rutaMulhacen d:/datos/input/rutaMulhacen.shp d:/datos/input/rutaMulhacen.tif
+rem hacemos el merge en dos pasos (primero, creamos un rater virtual de dos bandas con dos tif)
+C:\OSGeo4W\bin\gdalbuildvrt.exe d:\datos\input\bak\rutaMulhacen.vrt -separate d:\datos\input\bak\SierraNevada.tif d:\datos\input\rutaMulhacen.tif
+rem convertirmos el rater virtual en un raster con dos bandas
+C:\OSGeo4W\bin\gdal_translate  d:\datos\input\bak\rutaMulhacen.vrt   d:\datos\input\rutaMulhacen_merge.tif
+```
 
 
 ### QGIS Project
