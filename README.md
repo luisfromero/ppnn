@@ -4,6 +4,7 @@ This project aims to calculate the Total Viewshed within the socio-economic infl
 
 ## Overview
 
+
  Total Viewshed are essential for understanding the visual impact of natural landscapes, particularly within the context of national parks. By identifying these sheds, stakeholders can make informed decisions regarding land use, conservation efforts, and tourism development.
 
 ![Spanish National Parks Map](img/ppnn1.jpg)
@@ -67,10 +68,12 @@ To explore the data and results further, you can access the QGIS project [here](
 The project utilizes several Python scripts for buffer and bounding box generation:
 
 - [main.py](scripts/main.py)
+- [main.py](scripts/main.py)
 - `ppnn2024a.py`
 - `ppnn2024b.py`
 - `ppnn2024c.py`
 
+These scripts, to be used, for example, in the QGIS python console, are instrumental in preprocessing the data and preparing it for Total Viewshed calculations.
 These scripts, to be used, for example, in the QGIS python console, are instrumental in preprocessing the data and preparing it for Total Viewshed calculations.
 
 ## GDAL Tool Development
@@ -85,7 +88,11 @@ The  Total Viewshed calculations are performed using the skewEngine algorithm, a
 
 
 
+
+
 ---
+
+
 
 
 
