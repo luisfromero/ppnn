@@ -30,10 +30,15 @@ The result is GDAL_TVS: a tool that, from a raster elevation model, produces thr
 
 The developed tool can utilize available CPU cores (with OpenMP) but is incredibly fast on GPUs (using OpenCL). For example, calculations on raster dimensions of 5000x5000 are processed in just a few seconds.
 
+## GDAL Tool Development
 
-# Proposed changes to GDAL
+A custom tool, `gdal_tviewshed`, has been developed from a branch of GDAL, particularly from the existing `gdal_viewshed`. This tool enhances the capabilities of GDAL for  Total Viewshed analysis. You can find the GitHub repository for this branch [here](link_to_gdal_tviewshed).
 
-### Three changes to existing files:
+Additionally, for Windows users, a compiled version [(`gdal_tviewshed.exe`)](sources/gdal_tviewshed.exe) is available for easy integration into existing workflows.
+
+## Proposed changes to GDAL
+
+### Three minor changes to existing files:
 
 * **gdal\alg\CMakeLists.txt** (a new line, including tviewshed.cpp)
 * **gdal\alg\gdal_alg.h** (two definitions: GDALTViewshedOutputType and GDALTViewshedGenerate)
@@ -41,11 +46,13 @@ The developed tool can utilize available CPU cores (with OpenMP) but is incredib
      * add_executable(gdal_tviewshed gdal_tviewshed.cpp)
      * gdal_tviewshed (APPS_TARGETS)
 
-### Three new files
+### 2-4 new files (depending on whether the headers are included or not)
 
-*
-*
-*
+* [apps\gdal_tviewshed.cpp](sources/gdal_tviewshed.cpp)
+* [gdal\alg\tviewshed.cpp](sources/tviewshed.cpp)
+* [gdal\alg\tvs\skewEngine.h](sources/skewEngine.h)
+* [gdal\alg\tvs\tviewshed.h](sources/tviewshed.h)
+
 
 ¿OpenMP?
 
@@ -131,11 +138,6 @@ d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  
 ```
 
 
-## GDAL Tool Development
-
-A custom tool, `gdal_tviewshed`, has been developed from a branch of GDAL, particularly from the existing `gdal_viewshed`. This tool enhances the capabilities of GDAL for  Total Viewshed analysis. You can find the GitHub repository for this branch [here](link_to_gdal_tviewshed).
-
-Additionally, for Windows users, a compiled version (`gdal_tviewshed.exe`) is available for easy integration into existing workflows.
 
 ## Computational Methods
 
