@@ -39,6 +39,7 @@ Additionally, for Windows users, a compiled version [(`gdal_tviewshed.exe`)](sou
 ## Proposed changes to GDAL
 
 ### Three minor changes to existing files:
+### Three minor changes to existing files:
 
 * **gdal\alg\CMakeLists.txt** (a new line, including tviewshed.cpp)
 * **gdal\alg\gdal_alg.h** (two definitions: GDALTViewshedOutputType and GDALTViewshedGenerate)
