@@ -33,7 +33,7 @@ The developed tool can utilize available CPU cores (with OpenMP) but is incredib
 
 # Proposed changes to GDAL
 
-### Three changes to existing files:
+### Three minor changes to existing files:
 
 * **gdal\alg\CMakeLists.txt** (a new line, including tviewshed.cpp)
 * **gdal\alg\gdal_alg.h** (two definitions: GDALTViewshedOutputType and GDALTViewshedGenerate)
@@ -41,11 +41,13 @@ The developed tool can utilize available CPU cores (with OpenMP) but is incredib
      * add_executable(gdal_tviewshed gdal_tviewshed.cpp)
      * gdal_tviewshed (APPS_TARGETS)
 
-### Three new files
+### 2-4 new files (if included headers or not)
 
-*
-*
-*
+* apps\gdal_tviewshed.cpp
+* gdal\alg\tviewshed.cpp
+* gdal\alg\tvs\skewEngine.h
+* gdal\alg\tvs\tviewshed.h
+
 
 ¿OpenMP?
 
