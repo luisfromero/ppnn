@@ -1,0 +1,1 @@
+Los tif de resultados se han gitignorado por tamaño

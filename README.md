@@ -1,4 +1,4 @@
-# Project: Total Viewshed Calculation for Spanish National Parks
+# Total Viewshed Calculation for Spanish National Parks
 
 This project aims to calculate the Total Viewshed within the socio-economic influence area of the major national parks in Spain. It focuses on determining the Total Viewshed, emphasizing their significance in landscape analysis and planning.
 
@@ -10,7 +10,7 @@ This project aims to calculate the Total Viewshed within the socio-economic infl
 ![Spanish National Parks Map](img/ppnn1.jpg)
 *Map showing the Spanish national parks, their influence area, a 60km buffer, and the bounding boxes of the buffers.*
 
-## GDAL_TVS
+## GDAL_TViewshed
 
 A crucial aspect in studying the total visual basin of Spain's national parks is the development of a suitable computer tool that is both versatile and efficient. Therefore, inspired by the fantastic gdal_viewshed tool by Tamas Szekeres [cite], we have created GDAL_TVS (TotalViewshed). Essentially, this tool utilizes the efficient skewEngine algorithm [cite] to compute the total visual basin of an elevation model.
 
@@ -31,18 +31,49 @@ The result is GDAL_TVS: a tool that, from a raster elevation model, produces thr
 The developed tool can utilize available CPU cores (with OpenMP) but is incredibly fast on GPUs (using OpenCL). For example, calculations on raster dimensions of 5000x5000 are processed in just a few seconds.
 
 
+# Proposed changes to GDAL
+
+### Three changes to existing files:
+
+* **gdal\alg\CMakeLists.txt** (a new line, including tviewshed.cpp)
+* **gdal\alg\gdal_alg.h** (two definitions: GDALTViewshedOutputType and GDALTViewshedGenerate)
+*  **gdal\apps\CMakeLists.txt**
+     * add_executable(gdal_tviewshed gdal_tviewshed.cpp)
+     * gdal_tviewshed (APPS_TARGETS)
+
+### Three new files
+
+*
+*
+*
+
+¿OpenMP?
+
 ### Project Images
+
+![Total Viewshed around National Parks](img/tvs2.jpg)
+* Total Viewshed of the bounding boxes around Spain National Parks, calculated with a resolution of 30m.*
 
 
 ![Total Viewshed in Andalucia](img/tvs1.jpg)
-* Total Viewshed of the bounding boxes in two National Parks in Andalucia ( (Sierra Nevada, on the right, and Sierra de las Nieves, on the left), calculated with a resolution of 30m.*
+* Total Viewshed of the bounding boxes in two National Parks in Andalucia ( (Sierra Nevada, on the right, and Sierra de las Nieves, on the left), calculated with a resolution of 30m, and excluding Earth's curvature.*
 
-![Partial Viewshed in Canary Islands](img/teide1.png)
-* This image shows the viewshed visible from any point in the Teide National Park (189km2), with a resolution of 30m, so it is the sum of around 200,000 single viewsheds. The calculation was carried out with an NVidia GPU in less than a minute.*
+## Multiple viewshed (viewshed for many points)
 
-### Multiple viewshed (viewshed for many points)
+Two examples for multiple viewshed:
 
-# Preparación de los datos: dos bandas en un mismo rater
+* A route from a line shapefile (from _Posiciones del Veleta_ to _Mulhacén_)
+* A surface from a polygon shapefile (_Teide National Park_)
+
+![Route Viewshed in Canary Islands](img/mulhacen1.png)
+* This image shows the viewshed visible from any point in a route of about 20km, with a resolution of 30m, so it is the sum of around 512 single viewsheds. The calculation was carried out with an NVidia GPU in 20 seconds.*
+
+
+![Teide National Park viewshed in Canary Islands](img/teide1.png)
+* This image shows the viewshed visible from any point in the Teide National Park (189km2), with a resolution of 30m, so it is the sum of around 209000 single viewsheds. The calculation was carried out with an NVidia GPU in 18 seconds.*
+
+
+### Building a two-band raster (heights+mask) for multiple viewshed
 
 ```sh
 rem borramos el raster destino y los metadatos de qgis para evitar confusión al viasualizar max min
@@ -58,6 +89,12 @@ rem convertirmos el rater virtual en un raster con dos bandas
 C:\OSGeo4W\bin\gdal_translate  d:\datos\input\bak\rutaMulhacen.vrt   d:\datos\input\rutaMulhacen_merge.tif
 ```
 
+## ToDo: Radiation raster
+
+* Calcular head a tilt
+* Sustituir skewoutput=cv por maxangle_F y maxangle_B
+* Construir raster de 362 capas
+
 
 ### QGIS Project
 
@@ -68,13 +105,31 @@ To explore the data and results further, you can access the QGIS project [here](
 The project utilizes several Python scripts for buffer and bounding box generation:
 
 - [main.py](scripts/main.py)
-- [main.py](scripts/main.py)
-- `ppnn2024a.py`
-- `ppnn2024b.py`
-- `ppnn2024c.py`
+- [ppnn2024a.py](scripts/ppnn2024a.py)
+- [ppnn2024b.py](scripts/ppnn2024b.py)
+- [ppnn2024c.py](scripts/ppnn2024c.py)
 
 These scripts, to be used, for example, in the QGIS python console, are instrumental in preprocessing the data and preparing it for Total Viewshed calculations.
-These scripts, to be used, for example, in the QGIS python console, are instrumental in preprocessing the data and preparing it for Total Viewshed calculations.
+
+```
+-maskPOVs 
+-om MASK 
+-oz 1.5 
+-md 60000  
+D:\datos\input\bak\Picos.tif D:/datos/output/Picos.tif
+```
+
+```sh
+d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\Picos.tif        D:\onedrive\proyectos\ppnn\resultados\Picos.tif
+d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\Ordesa.tif       D:\onedrive\proyectos\ppnn\resultados\Ordesa.tif
+d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\AiguesTortes.tif D:\onedrive\proyectos\ppnn\resultados\AiguesTortes.tif
+d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\SierraNevada.tif D:\onedrive\proyectos\ppnn\resultados\SierraNevada.tif
+d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\SierraNieves.tif D:\onedrive\proyectos\ppnn\resultados\SierraNieves.tif
+d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\Teide.tif        D:\onedrive\proyectos\ppnn\resultados\Teide.tif
+d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\Peneda.tif       D:\onedrive\proyectos\ppnn\resultados\Peneda.tif
+d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\Guadarrama.tif   D:\onedrive\proyectos\ppnn\resultados\Guadarrama.tif
+```
+
 
 ## GDAL Tool Development
 
