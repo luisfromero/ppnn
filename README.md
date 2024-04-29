@@ -12,17 +12,17 @@ This project aims to calculate the Total Viewshed within the socio-economic infl
 
 ## GDAL_TViewshed
 
-A crucial aspect in studying the total visual basin of Spain's national parks is the development of a suitable computer tool that is both versatile and efficient. Therefore, inspired by the fantastic gdal_viewshed tool by Tamas Szekeres [cite], we have created GDAL_TVS (TotalViewshed). Essentially, this tool utilizes the efficient skewEngine algorithm [cite] to compute the total visual basin of an elevation model.
+A crucial aspect in studying the total viewshed of Spain's national parks is the development of a suitable computer tool that is both versatile and efficient. Therefore, inspired by the fantastic [gdal_viewshed tool by Tamas Szekeres](https://gdal.org/programs/gdal_viewshed.html), we have created GDAL_TVS (TotalViewshed). Essentially, this tool utilizes the efficient [skewEngine algorithm](https://link.springer.com/article/10.1007/s11227-024-05923-2) to compute the total viewshed of an elevation model.
 
 However, during the adaptation of the algorithm to GDAL, as well as during the analysis of the state-of-the-art in the visibility field, we discovered the possibility of adapting the tool to meet a growing demand in GIS, especially related to surveillance or observation paths, and solar radiation calculations.
 
 The result is GDAL_TVS: a tool that, from a raster elevation model, produces three types of output rasters:
 
-1. **TOTAL:** In this mode, the raster calculates the total visual basin of the terrain, measured in visible hectares from each point of the input raster, and stored as a geoTIFF raster layer of type float32.
+1. **TOTAL:** In this mode, the raster calculates the total viewshed of the terrain, measured in visible hectares from each point of the input raster, and stored as a geoTIFF raster layer of type float32.
 
-2. **MULTIPLE:** In this mode, the application computes the visual basin observed from a subset of points of the input raster, which can be a polygon or a path, for example. The result is a raster layer with a mask, similar to what gdal_viewshed produces. But unlike gdal_viewshed, the mask is not boolean but a float indicating if a destination point is visible from a greater or lesser number of observation points.
+2. **MULTIPLE:** In this mode, the application computes the viewshed observed from a subset of points of the input raster, which can be a polygon or a path, for example. The result is a raster layer with a mask, similar to what gdal_viewshed produces. But unlike gdal_viewshed, the mask is not boolean but a float indicating if a destination point is visible from a greater or lesser number of observation points.
 
-3. **RADIATION:** The third mode is intended to generate a raster that can be useful in a tool for calculating solar radiation. In this case, GDAL_TVS produces 3 layers of information (362 bands of byte size) in which, for each point, it stores:
+3. **¿HORIZON/RADIATION?:** The third mode (experimental, como el resto) is intended to generate a raster required by tool for calculating solar radiation. In this case, GDAL_TVS produces more layers of information (~362 bands of byte size) in which, for each point, it stores:
 
    - 1 head value
    - 1 tilt value
@@ -39,7 +39,6 @@ Additionally, for Windows users, a compiled version [(`gdal_tviewshed.exe`)](sou
 ## Proposed changes to GDAL
 
 ### Three minor changes to existing files:
-### Three minor changes to existing files:
 
 * **gdal\alg\CMakeLists.txt** (a new line, including tviewshed.cpp)
 * **gdal\alg\gdal_alg.h** (two definitions: GDALTViewshedOutputType and GDALTViewshedGenerate)
@@ -52,10 +51,10 @@ Additionally, for Windows users, a compiled version [(`gdal_tviewshed.exe`)](sou
 * [apps\gdal_tviewshed.cpp](sources/gdal_tviewshed.cpp)
 * [gdal\alg\tviewshed.cpp](sources/tviewshed.cpp)
 * [gdal\alg\tvs\skewEngine.h](sources/skewEngine.h)
-* [gdal\alg\tvs\tviewshed.h](sources/tviewshed.h)
+* [gdal\alg\tvs\tviewshed.h](sources/tviewshed.h) (ToDo)
 
 
-¿OpenMP?
+¿OpenMP?¿Pthreads?
 
 ### Project Images
 
@@ -136,6 +135,8 @@ d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  
 d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\Teide.tif        D:\onedrive\proyectos\ppnn\resultados\Teide.tif
 d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\Peneda.tif       D:\onedrive\proyectos\ppnn\resultados\Peneda.tif
 d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -oz 1.5 -md 60000  D:\datos\input\bak\Guadarrama.tif   D:\onedrive\proyectos\ppnn\resultados\Guadarrama.tif
+
+d:\onedrive\proyectos\gdal\cmake-build-release\apps\Release\gdal_tviewshed.exe  -maskPOVs -om MASK -oz 1.5 -md 160000  D:/datos/input/rutaMulhacen_merge.tif D:/datos/output/rutaMulhacen2.tif
 ```
 
 
@@ -154,4 +155,4 @@ The  Total Viewshed calculations are performed using the skewEngine algorithm, a
 
 
 
-This project serves as a valuable resource for environmentalists, policymakers, and researchers interested in understanding and preserving the visual integrity of Spain's national parks. For any inquiries or collaborations, feel free to contact the project maintainers.
+This project serves as a valuable resource for environmentalists, policymakers, and researchers interested in understanding and preserving the visual integrity of Spain's national parks. For any inquiries or collaborations, feel free to contact the project maintainers. (Esto lo ha puesto ChatGPT, que me está ayudando, sobre todo, a traducir :)

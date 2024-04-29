@@ -250,9 +250,13 @@ MAIN_START(argc, argv)
         {
             outputMode = TVS_MASK;
         }
+        else if (EQUAL(pszOutputMode, "HORIZON"))
+        {
+            outputMode = TVS_HORIZON;
+        }
         else
         {
-            Usage("-om must be either NORMAL or MASK");
+            Usage("-om must be either NORMAL, MASK or HORIZON");
         }
     }
 

@@ -52,19 +52,16 @@ CPL_CVSID("$Id$")
 #include <windows.h>
 
 #include <omp.h>
-#define USE_OPENCL
-#ifdef USE_OPENCL
 #include <CL/cl.hpp>
-#endif
 #include <iostream>
-#include "tvs/skewEngine.h"
+
 #include "tvs/tviewshed.h"
 
 
 
 
 /************************************************************************/
-/*                        GDALViewshedGenerate()                         */
+/*                        GDALTViewshedGenerate()                         */
 /************************************************************************/
 
 /**
@@ -93,30 +90,6 @@ CPL_CVSID("$Id$")
 * @param papszCreationOptions creation options.
 *
 * @param dfObserverHeight The height of the observer above the DEM surface.
-*
-* @param dfTargetHeight The height of the target above the DEM surface.
-* (default 0)
-*
-* @param dfVisibleVal pixel value for visibility (default 255)
-*
-* @param dfInvisibleVal pixel value for invisibility (default 0)
-*
-* @param dfOutOfRangeVal The value to be set for the cells that fall outside of
-* the range specified by dfMaxDistance.
-*
-* @param dfNoDataVal The value to be set for the cells that have no data.
-*                    If set to a negative value, nodata is not set.
-*                    Note: currently, no special processing of input cells at a
-* nodata value is done (which may result in erroneous results).
-*
-* @param dfCurvCoeff Coefficient to consider the effect of the curvature and
-* refraction. The height of the DEM is corrected according to the following
-* formula: [Height] -= dfCurvCoeff * [Target Distance]^2 / [Earth Diameter] For
-* the effect of the atmospheric refraction we can use 0.85714.
-*
-* @param eMode The mode of the viewshed calculation.
-* Possible values GVM_Diagonal = 1, GVM_Edge = 2 (default), GVM_Max = 3,
-* GVM_Min = 4.
 *
 * @param dfMaxDistance maximum distance range to compute viewshed.
 *                      It is also used to clamp the extent of the output
@@ -165,11 +138,7 @@ GDALDatasetH GDALTViewshedGenerate(
    VALIDATE_POINTER1(hBand, "GDALTViewshedGenerate", nullptr);
    VALIDATE_POINTER1(pszTargetRasterName, "GDALTViewshedGenerate", nullptr);
 
-   //skewAlgorithm=KERNEL_IDENTITYDEM;
-   //runMode=CPU_MODE;
-   //runMode=GPU_MODE;
 
-   skewAlgorithm=KERNEL_SDEM;
    runMode=HYBRID_MODE;
    //runMode=CPU_MODE;
    gpuMode=OPENCL_MODE;
@@ -201,7 +170,12 @@ GDALDatasetH GDALTViewshedGenerate(
    double xStep=adfGeoTransform[1];
    double yStep=adfGeoTransform[5];
    printf("Size and scale = %d x %d, %e (w-e) x %e (n-s)\n",nXSize,nYSize,xStep,yStep);
-   step=(abs(xStep)+abs(yStep))/2.0;
+   step=(abs(xStep)+abs(yStep))/2.0f;
+   double errorX=abs(1.0-step/xStep);
+   double errorY=abs(1.0-step/xStep);
+
+   //if(errorX>0.01)
+       printf("Error de malla %e  %e\n",errorX,errorY);
 
    CPL_IGNORE_RET_VAL(papszExtraOptions);
 
@@ -332,9 +306,10 @@ GDALDatasetH GDALTViewshedGenerate(
    /* create output raster */
 #ifdef TVS
 
+   bool isHorizon=outputType==2;
    auto poDstDS = std::unique_ptr<GDALDataset>(
-       hDriver->Create(pszTargetRasterName, nXSize, nYSize, 1,
-                       GDT_Float32,
+       hDriver->Create(pszTargetRasterName, nXSize, nYSize,isHorizon?nSectors:1 ,
+                       isHorizon?GDT_Byte:GDT_Float32,
                        const_cast<char **>(papszCreationOptions)));
 #else
    auto poDstDS = std::unique_ptr<GDALDataset>(
@@ -866,12 +841,10 @@ GDALDatasetH GDALTViewshedGenerate(
        return nullptr;
    }
 #endif
-#define _USESKDLL
-#ifndef USESKDLL
 
    surScale=abs(M_PI/(360*xStep*yStep));
-   POVh=dfObserverHeight/step;
-   maxDistance=dfMaxDistance;
+   POVh=(float)dfObserverHeight/step;
+   maxDistance=(float)dfMaxDistance;
    dimx=nXSize;
    dimy=nYSize;
    N=dim=dimx*dimy;
@@ -913,52 +886,56 @@ GDALDatasetH GDALTViewshedGenerate(
            return nullptr;
        }
 
-       skewEngine<float>::allocate((inputData<float> &) inData, inputD,  (float **) & outD, dimx, dimy);
-       execute(skewAlgorithm,pfnProgress,pProgressArg);
-       showResults(skewAlgorithm);
-       GDALDataType dt=GDT_Float32 ;
-       //salida=outD;
-       GDALRasterIO(hTargetBand, GF_Write, 0, 0, nXSize, nYSize,outD,nXSize, nYSize,dt,0, 0);
-       skewEngine<float>::deallocate(inData,inputD,outD);
-       //free(salida);
-       //for(int i=0;i<=180;i++)        pfnProgress(i/180.0, "", pProgressArg);
+
+       int dataSize=sizeof(float);
+       inData.input0=(float*)malloc(dim*dataSize);
+       inData.input1=(float*)malloc(dim*dataSize);
+       inData.input2=(float*)malloc(dim*dataSize);
+       inData.input3=(float*)malloc(dim*dataSize);
+       //memcpy(inData.input0,inputD,dim*dataSize); //Move input data to pinned memory
+
+       for(int i=0;i<dim;i++)inData.input0[i]=inputD[i]/step;
+       //from now on, step is the unit
+       free(inputD);
+
+       if(isHorizon)
+       {
+           for(int i=0;i<360;i++){
+               horizontes[i]=(unsigned char *)malloc(dim);
+               if(horizontes[i]==nullptr)
+                   exit(0); //ToDo
+           }
+       }
+       else
+       {
+           outD=(float *)malloc(dim*dataSize);
+           memset(outD,0,dim*dataSize);
+       }
+       inData=  skewEngine<float>::prepare(&inData,dimx,dimy);// Rotated and mirror
+       pair_t mmi = getMinMax(inData.input0);
+       execute(pfnProgress,pProgressArg);
+       if(outputType!=TVS_HORIZON){
+           pair_t mm = getMinMax(outD);
+           if(verbose)
+           {
+               printf("Extreme values (unscaled) for output: %6.2f | %e  \n ", mm.min, mm.max);
+               printf("Extreme values for output: %6.2f | %e  (scale = %f )\n ", mm.min * surScale, mm.max * surScale, surScale);
+               fflush(stdout);
+           }
+           GDALDataType dt=GDT_Float32 ;
+           GDALRasterIO(hTargetBand, GF_Write, 0, 0, nXSize, nYSize,outD,nXSize, nYSize,dt,0, 0);
+           free(outD);
+       }
+       else
+       {
+           // ToDo ¿interlaced?¿multiband?¿database?¿zip?
+           GDALDataType dt=GDT_Byte ;
+           GDALRasterIO(hTargetBand, GF_Write, 0, 0, nXSize, nYSize,outH,nXSize, nYSize,GDT_Byte,0, 0);
+           for(int i=0;i<360;i++)free(horizontes[i]);
+       }
+
        return GDALDataset::FromHandle(poDstDS.release());
    }
-
-#else
-   float * entrada=(float *)malloc(nXSize*nYSize*sizeof(float));
-   if (!GDALRasterIO(hBand, GF_Read, nXStart, nYStart, nXSize, nYSize, entrada,nXSize, nYSize, GDT_Float32, 0, 0)){
-       float * salida=(float *)malloc(nXSize*nYSize*sizeof(float));
-
-
-       HMODULE motor = LoadLibrary("d:/onedrive/proyectos/tviewshed/sk_engine.dll");
-       typedef int (* ComputeViewshed1 )(int dimx, int dimy, float *in, float *out,float height, float step, int mode);
-       ComputeViewshed1 ptrComputeViewshed1 = (ComputeViewshed1) GetProcAddress((motor),"computeViewshed");
-       ptrComputeViewshed1(nXSize,nYSize,entrada,(float *)&salida,1.5,30,0);
-
-       FreeLibrary(motor);
-
-
-
-       GDALDataType dt=heightMode != TVS_MASK ? GDT_Float32 : GDT_Byte;
-       GDALRasterIO(hTargetBand, GF_Write, 0, 0, nXSize, nYSize,salida,nXSize, nYSize,dt,0, 0);
-       //free(salida);
-       for(int i=0;i<=180;i++)        pfnProgress(i/180.0, "", pProgressArg);
-       return GDALDataset::FromHandle(poDstDS.release());
-   }
-
-#endif
-
-
-
-
-
-
-
-
-
-
-
 
    return nullptr;
 }
